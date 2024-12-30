@@ -6,28 +6,28 @@
 
 // Use Mongoose library
 
-import mongoose from 'mongoose';
+import mongoose, { Schema, model, Document } from 'mongoose';
 
 type DuplicatedUsers = {
     email: string;
 };
+
+interface IUser extends Document {
+    name: string;
+    email: string;
+}
 // https://mongoosejs.com/docs/guide.html ??
-const userSchema = new mongoose.Schema({
+const userSchema = new Schema<IUser>({
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true },
 });
 
-// Create the model
-const User = mongoose.model('User', userSchema);
+const User = model<IUser>('User', userSchema);
 
-async function manageUsers(): Promise<DuplicatedUsers[]> {
+export async function manageUsers(): Promise<DuplicatedUsers[]> {
     try {
-        // Connect to MongoDB 
-        await mongoose.connect('mongodb://localhost:27017/mydatabase');
+        await User.deleteMany({});
 
-        console.log('Connected to MongoDB');
-
-        //Add new users (example)
         const users = [
             { name: 'Miras', email: 'miras@gmail.com' },
             { name: 'Almas', email: 'almas@gmail.com' },
@@ -44,16 +44,11 @@ async function manageUsers(): Promise<DuplicatedUsers[]> {
             { $project: { email: "$_id", _id: 0, users: 1 } }
         ]);
 
-        return duplicates.map((duplicate: any) => ({
-            email: duplicate.email
-        }));
+        return duplicates as DuplicatedUsers[];
     } catch (error) {
-        console.error('Error managing users:', error);
+        console.error('Error:', error);
         return [];
-    } finally {
-        // Close the connection to MongoDB
-        await mongoose.disconnect();
     }
 }
 
-module.exports = { manageUsers };
+//module.exports = { manageUsers };
